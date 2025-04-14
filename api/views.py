@@ -5,17 +5,24 @@ from api.serializers import ProductSerializer, OrderSerializer,ProductInfoSerial
 from api.models import Product, Order, OrderItem
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.views import APIView
 
 
-class ProductListAPIView(generics.ListAPIView):
-    model = Product
+class ProductListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = ProductSerializer
-    queryset = Product.objects.all()
+    queryset = Product.objects.all() 
+
+    def get_permissions(self):
+        self.permission_classes = [AllowAny]
+        if self.request.method == 'POST':
+            self.permission_classes = [IsAdminUser]
+        return super().get_permissions()
 
 class ProductDetailAPIView(generics.RetrieveAPIView):
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
+    lookup_url_kwarg ='product_id'
 
 class UserOrderListAPIView(generics.ListAPIView):
     queryset = Order.objects.prefetch_related('items__product')
@@ -30,6 +37,17 @@ class UserOrderListAPIView(generics.ListAPIView):
 class OrderListAPIView(generics.ListAPIView): #Get orders from only a specific user
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related('items__product').all()
+
+class ProductInfoAPIView(APIView):
+    def get(self,request): 
+        products = Product.objects.all()
+        serializer = ProductInfoSerializer ({
+            'products': products,
+            'count' : len(products),
+            'max_price' : products.aggregate(max_price=Max('price'))['max_price']
+        })
+        return Response(serializer.data)
+
     
 
 
@@ -52,12 +70,12 @@ class OrderListAPIView(generics.ListAPIView): #Get orders from only a specific u
 #     serializer = OrderSerializer(orders, many=True)
 #     return Response(serializer.data)
                     
-@api_view(['GET'])
-def product_info(request):
-    products = Product.objects.all()
-    serializer = ProductInfoSerializer ({
-        'products': products,
-        'count' : len(products),
-        'max_price' : products.aggregate(max_price=Max('price'))['max_price']
-    })
-    return Response(serializer.data)
+# @api_view(['GET'])
+# def product_info(request):
+#     products = Product.objects.all()
+#     serializer = ProductInfoSerializer ({
+#         'products': products,
+#         'count' : len(products),
+#         'max_price' : products.aggregate(max_price=Max('price'))['max_price']
+#     })
+#     return Response(serializer.data)
