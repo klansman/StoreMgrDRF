@@ -20,6 +20,7 @@ class ProductDetailAPIView(generics.RetrieveAPIView):
 class UserOrderListAPIView(generics.ListAPIView):
     queryset = Order.objects.prefetch_related('items__product')
     serializer_class = OrderSerializer 
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):#dynamic filtering which overwrites the default queryset
         qs = super().get_queryset()
@@ -29,7 +30,7 @@ class UserOrderListAPIView(generics.ListAPIView):
 class OrderListAPIView(generics.ListAPIView): #Get orders from only a specific user
     serializer_class = OrderSerializer
     queryset = Order.objects.prefetch_related('items__product').all()
-    permission_classes = [IsAuthenticated]
+    
 
 
 # Using FBV
